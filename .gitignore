@@ -32,18 +32,34 @@ build/
 ### VS Code ###
 .vscode/
 
-# Configuración local y secretos
+# Configuraciï¿½n local y secretos
 .env
 .env.*
 !.env.example
 
-# Configuración local de Spring
+# Configuraciï¿½n local de Spring
 application-local.properties
 application-dev.properties
 
-# Archivos de configuración sensibles
+# Archivos de configuraciï¿½n sensibles
 secrets/
 credentials/
 
 # Respaldos comprimidos locales
+*.zip
+
+# ConfiguraciÃ³n local y secretos
+.env
+.env.*
+!.env.example
+
+# ConfiguraciÃ³n local de Spring
+application-local.properties
+application-dev.properties
+
+# Archivos de configuraciÃ³n sensibles
+secrets/
+credentials/
+
+# Respaldos comprimidos
 *.zip
