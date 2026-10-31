@@ -10,6 +10,8 @@ import cl.legga.documentos.legajo.LegajoEstadoInvalidoException;
 import cl.legga.documentos.legajo.LegajoNoEncontradoException;
 import cl.legga.documentos.legajo.LegajoServiceException;
 
+import cl.legga.documentos.storage.AzureBlobService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -39,16 +41,20 @@ public class DocumentoController {
 
         private final DocumentoService documentoService;
         private final DocumentoStorageService documentoStorageService;
+        // Servicio que genera enlaces SAS temporales para los archivos de Azure.
+        private final AzureBlobService azureBlobService;
 
         /**
          * Constructor con inyección de dependencias.
          */
         public DocumentoController(
                         DocumentoService documentoService,
-                        DocumentoStorageService documentoStorageService) {
+                        DocumentoStorageService documentoStorageService,
+                        AzureBlobService azureBlobService) {
 
                 this.documentoService = documentoService;
                 this.documentoStorageService = documentoStorageService;
+                this.azureBlobService = azureBlobService;
         }
 
         /**
@@ -161,6 +167,46 @@ public class DocumentoController {
                 return documentoService.desvincular(id)
                                 .map(this::convertirAResponse)
                                 .map(ResponseEntity::ok)
+                                .orElse(ResponseEntity.notFound().build());
+        }
+
+        /**
+         * Genera un enlace temporal para descargar el archivo de un documento.
+         *
+         * Endpoint:
+         * GET /api/documentos/{id}/descarga
+         *
+         * El cliente utiliza el UUID del documento.
+         * El storageKey se obtiene internamente y no se expone en la respuesta.
+         *
+         * La URL SAS permite lectura y expira después de 5 minutos.
+         *
+         * @param id UUID del documento registrado en PostgreSQL.
+         * @return URL SAS temporal o HTTP 404 si el documento no existe.
+         */
+        @GetMapping("/{id}/descarga")
+        public ResponseEntity<Map<String, Object>> generarEnlaceDescarga(
+                        @PathVariable UUID id) {
+
+                // Busca el documento en PostgreSQL mediante su identificador.
+                return documentoService.buscarPorId(id)
+                                .map(documento -> {
+
+                                        // Obtiene la clave interna del Blob y genera
+                                        // un enlace SAS temporal de solo lectura.
+                                        String urlDescarga = azureBlobService.generarUrlDescargaSas(
+                                                        documento.getStorageKey());
+
+                                        // Devuelve la URL temporal y su tiempo de vigencia.
+                                        // No se incluye el storageKey en la respuesta.
+                                        Map<String, Object> respuesta = Map.of(
+                                                        "documentoId", documento.getId(),
+                                                        "urlDescarga", urlDescarga,
+                                                        "expiraEnSegundos", 300);
+
+                                        return ResponseEntity.ok(respuesta);
+                                })
+                                // Si el UUID no corresponde a un documento, retorna 404.
                                 .orElse(ResponseEntity.notFound().build());
         }
 

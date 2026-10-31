@@ -85,3 +85,8 @@ Los informes técnicos y documentos del proyecto se organizan en la carpeta `/do
 La aplicación utiliza variables de entorno para configurar la conexión a PostgreSQL, Azure Blob Storage y MS-Legajos.
 
 No se deben almacenar credenciales directamente en el repositorio.
+
+
+## Hitos técnicos
+
+- [Descarga de documentos mediante SAS](docs/hitos-tecnicos/descarga-sas/README.md)
