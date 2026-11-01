@@ -43,4 +43,27 @@ public class DocumentoService {
                     return documentoRepository.save(documento);
                 });
     }
+
+    // actualizar nombre
+    public Optional<Documento> actualizarNombreVisible(
+            UUID id,
+            String nombreVisible) {
+
+        if (nombreVisible == null || nombreVisible.isBlank()) {
+            throw new IllegalArgumentException(
+                    "El nombre visible no puede estar vacío");
+        }
+
+        if (nombreVisible.length() > 255) {
+            throw new IllegalArgumentException(
+                    "El nombre visible no puede superar los 255 caracteres");
+        }
+
+        return documentoRepository.findById(id)
+                .map(documento -> {
+                    documento.setNombreVisible(nombreVisible.trim());
+                    documento.setUpdatedAt(OffsetDateTime.now());
+                    return documentoRepository.save(documento);
+                });
+    }
 }

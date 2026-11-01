@@ -1,6 +1,8 @@
 
 package cl.legga.documentos.documento.controller;
 
+import cl.legga.documentos.documento.dto.ActualizarNombreDocumentoRequest;
+
 import cl.legga.documentos.documento.dto.DocumentoResponse;
 import cl.legga.documentos.documento.entity.Documento;
 import cl.legga.documentos.documento.service.DocumentoService;
@@ -207,6 +209,24 @@ public class DocumentoController {
                                         return ResponseEntity.ok(respuesta);
                                 })
                                 // Si el UUID no corresponde a un documento, retorna 404.
+                                .orElse(ResponseEntity.notFound().build());
+        }
+
+        /**
+         * Actualiza el nombre visible de un documento.
+         *
+         * PATCH /api/documentos/{id}/nombre
+         */
+        @PatchMapping("/{id}/nombre")
+        public ResponseEntity<DocumentoResponse> actualizarNombreVisible(
+                        @PathVariable UUID id,
+                        @RequestBody ActualizarNombreDocumentoRequest request) {
+
+                return documentoService.actualizarNombreVisible(
+                                id,
+                                request.nombreVisible())
+                                .map(this::convertirAResponse)
+                                .map(ResponseEntity::ok)
                                 .orElse(ResponseEntity.notFound().build());
         }
 
