@@ -87,6 +87,7 @@ La aplicación utiliza variables de entorno para configurar la conexión a Postg
 No se deben almacenar credenciales directamente en el repositorio.
 
 
-## Hitos técnicos
+# Hitos técnicos
 
 - [Descarga de documentos mediante SAS](docs/hitos-tecnicos/descarga-sas/README.md)
+- [Actualización del nombre visible del documento](docs/hitos-tecnicos/acutalizacion%20nombre%20archivo/README.md)
