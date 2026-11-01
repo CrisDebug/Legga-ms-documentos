@@ -42,7 +42,7 @@ La respuesta confirmó que nombreVisible fue actualizado y nombreOriginal perman
 
 ## Evidencia
 La captura de Postman se encuentra en:
-evidencias/evidencia-nombre-visible.png
+![Evidencia de actualización del nombre visible](evidencias/evidencia-nombre-visible.png)
 
 ## Resultado del hito
 Actualización del nombre visible implementada y probada correctamente.
