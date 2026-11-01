@@ -90,4 +90,4 @@ No se deben almacenar credenciales directamente en el repositorio.
 # Hitos técnicos
 
 - [Descarga de documentos mediante SAS](docs/hitos-tecnicos/descarga-sas/README.md)
-- ![Evidencia de actualización del nombre visible](evidencias/evidencia-nombre-visible.png)
+- [Actualización del nombre visible del documento](docs/hitos-tecnicos/acutalizacion%20nombre%20archivo/README.md)
