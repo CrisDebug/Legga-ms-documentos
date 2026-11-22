@@ -125,8 +125,11 @@ public class DocumentoStorageService {
             documento.setCreatedAt(fechaActual);
             documento.setUpdatedAt(fechaActual);
 
-            // 7. Persistir los metadatos en PostgreSQL.
-            return documentoService.guardar(documento);
+            // 7. Persistir los metadatos en PostgreSQL y registrar
+            // el evento Outbox dentro de la misma transacción.
+            return documentoService.guardarDocumentoCargado(
+                    documento,
+                    uploadedBy);
 
         } catch (Exception ex) {
 
