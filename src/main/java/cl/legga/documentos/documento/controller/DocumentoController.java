@@ -2,16 +2,13 @@
 package cl.legga.documentos.documento.controller;
 
 import cl.legga.documentos.documento.dto.ActualizarNombreDocumentoRequest;
-
 import cl.legga.documentos.documento.dto.DocumentoResponse;
 import cl.legga.documentos.documento.entity.Documento;
 import cl.legga.documentos.documento.service.DocumentoService;
 import cl.legga.documentos.storage.DocumentoStorageService;
-
 import cl.legga.documentos.legajo.LegajoEstadoInvalidoException;
 import cl.legga.documentos.legajo.LegajoNoEncontradoException;
 import cl.legga.documentos.legajo.LegajoServiceException;
-
 import cl.legga.documentos.storage.AzureBlobService;
 
 import org.springframework.http.HttpStatus;
@@ -24,31 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Controlador REST para la gestión documental de LEGGA.
- *
- * Expone operaciones para:
- * - Cargar documentos.
- * - Consultar documentos.
- * - Consultar documentos asociados a un legajo.
- * - Desvincular documentos.
- *
- * La autorización de usuarios y la validación de existencia
- * del legajo deberán integrarse antes de habilitar el servicio
- * en un entorno productivo.
- */
 @RestController
 @RequestMapping("/api/documentos")
 public class DocumentoController {
 
         private final DocumentoService documentoService;
         private final DocumentoStorageService documentoStorageService;
-        // Servicio que genera enlaces SAS temporales para los archivos de Azure.
         private final AzureBlobService azureBlobService;
 
-        /**
-         * Constructor con inyección de dependencias.
-         */
         public DocumentoController(
                         DocumentoService documentoService,
                         DocumentoStorageService documentoStorageService,
@@ -60,50 +40,31 @@ public class DocumentoController {
         }
 
         /**
-         * Carga un documento y registra sus metadatos.
+         * Carga un documento y lo asocia a un requisito documental.
          *
-         * Endpoint:
          * POST /api/documentos
-         *
-         * Content-Type:
-         * multipart/form-data
-         *
-         * Parámetros:
-         * archivo: archivo PDF, JPG o PNG.
-         * legajoId: UUID del legajo asociado.
-         * uploadedBy: identificador temporal del usuario.
-         *
-         * IMPORTANTE:
-         * uploadedBy es temporal para pruebas con Postman.
-         * En la integración definitiva se obtendrá de la identidad
-         * autenticada y no de un parámetro enviado por el cliente.
-         *
-         * La validación de existencia y vigencia del legajo
-         * mediante MS-Legajos está pendiente.
          */
         @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         public ResponseEntity<DocumentoResponse> cargarDocumento(
 
                         @RequestParam("archivo") MultipartFile archivo,
-
                         @RequestParam("legajoId") UUID legajoId,
+                        @RequestParam("requisitoId") UUID requisitoId,
+                        @RequestParam("uploadedBy") String uploadedBy,
+                        @RequestHeader("X-LEGGA-TENANT-ID") String tenantId,
+                        @RequestHeader("X-LEGGA-OBJECT-ID") String objectId) {
 
-                        @RequestParam("uploadedBy") String uploadedBy) {
-
-                // Ejecuta el proceso de validación, almacenamiento
-                // en Azure Blob y persistencia de metadatos.
                 Documento documento = documentoStorageService.cargarDocumento(
                                 archivo,
                                 legajoId,
-                                uploadedBy);
+                                requisitoId,
+                                uploadedBy,
+                                tenantId,
+                                objectId);
 
-                // Convierte la entidad en DTO para responder al cliente.
-                DocumentoResponse respuesta = convertirAResponse(documento);
-
-                // Retorna HTTP 201 cuando el documento fue creado.
                 return ResponseEntity
                                 .status(HttpStatus.CREATED)
-                                .body(respuesta);
+                                .body(convertirAResponse(documento));
         }
 
         /**
@@ -146,7 +107,8 @@ public class DocumentoController {
         public ResponseEntity<List<DocumentoResponse>> buscarPorLegajo(
                         @PathVariable UUID legajoId) {
 
-                List<DocumentoResponse> documentos = documentoService.buscarPorLegajoId(legajoId)
+                List<DocumentoResponse> documentos = documentoService
+                                .buscarPorLegajoId(legajoId)
                                 .stream()
                                 .map(this::convertirAResponse)
                                 .toList();
@@ -155,11 +117,26 @@ public class DocumentoController {
         }
 
         /**
-         * Desvincula un documento de su legajo.
+         * Consulta los documentos activos asociados a un requisito.
          *
-         * PATCH /api/documentos/{id}/desvincular
+         * GET /api/documentos/requisito/{requisitoId}
+         */
+        @GetMapping("/requisito/{requisitoId}")
+        public ResponseEntity<List<DocumentoResponse>> buscarPorRequisito(
+                        @PathVariable UUID requisitoId) {
+
+                List<DocumentoResponse> documentos = documentoService
+                                .buscarPorRequisitoId(requisitoId)
+                                .stream()
+                                .map(this::convertirAResponse)
+                                .toList();
+
+                return ResponseEntity.ok(documentos);
+        }
+
+        /**
+         * Desvincula completamente un documento.
          *
-         * Esta operación modifica el estado lógico del documento.
          * No elimina el archivo físico de Azure Blob Storage.
          */
         @PatchMapping("/{id}/desvincular")
@@ -173,34 +150,20 @@ public class DocumentoController {
         }
 
         /**
-         * Genera un enlace temporal para descargar el archivo de un documento.
+         * Genera un enlace temporal de descarga.
          *
-         * Endpoint:
          * GET /api/documentos/{id}/descarga
-         *
-         * El cliente utiliza el UUID del documento.
-         * El storageKey se obtiene internamente y no se expone en la respuesta.
-         *
-         * La URL SAS permite lectura y expira después de 5 minutos.
-         *
-         * @param id UUID del documento registrado en PostgreSQL.
-         * @return URL SAS temporal o HTTP 404 si el documento no existe.
          */
         @GetMapping("/{id}/descarga")
         public ResponseEntity<Map<String, Object>> generarEnlaceDescarga(
                         @PathVariable UUID id) {
 
-                // Busca el documento en PostgreSQL mediante su identificador.
                 return documentoService.buscarPorId(id)
                                 .map(documento -> {
 
-                                        // Obtiene la clave interna del Blob y genera
-                                        // un enlace SAS temporal de solo lectura.
-                                        String urlDescarga = azureBlobService.generarUrlDescargaSas(
-                                                        documento.getStorageKey());
+                                        String urlDescarga = azureBlobService
+                                                        .generarUrlDescargaSas(documento.getStorageKey());
 
-                                        // Devuelve la URL temporal y su tiempo de vigencia.
-                                        // No se incluye el storageKey en la respuesta.
                                         Map<String, Object> respuesta = Map.of(
                                                         "documentoId", documento.getId(),
                                                         "urlDescarga", urlDescarga,
@@ -208,7 +171,6 @@ public class DocumentoController {
 
                                         return ResponseEntity.ok(respuesta);
                                 })
-                                // Si el UUID no corresponde a un documento, retorna 404.
                                 .orElse(ResponseEntity.notFound().build());
         }
 
@@ -231,15 +193,15 @@ public class DocumentoController {
         }
 
         /**
-         * Convierte la entidad Documento en su DTO de respuesta.
-         *
-         * No expone storageKey al cliente.
+         * Convierte Documento en DocumentoResponse.
          */
         private DocumentoResponse convertirAResponse(Documento documento) {
 
                 return new DocumentoResponse(
                                 documento.getId(),
                                 documento.getLegajoId(),
+                                documento.getInstitucionId(),
+                                documentoService.obtenerRequisitoIds(documento.getId()),
                                 documento.getNombreOriginal(),
                                 documento.getNombreVisible(),
                                 documento.getTipoMime(),
@@ -250,24 +212,14 @@ public class DocumentoController {
                                 documento.getUpdatedAt());
         }
 
-        /**
-         * Maneja errores de validación de los datos recibidos.
-         *
-         * Retorna HTTP 400 Bad Request.
-         */
         @ExceptionHandler(IllegalArgumentException.class)
         public ResponseEntity<Map<String, String>> manejarErrorValidacion(
                         IllegalArgumentException ex) {
 
-                return ResponseEntity.badRequest().body(
-                                Map.of("error", ex.getMessage()));
+                return ResponseEntity.badRequest()
+                                .body(Map.of("error", ex.getMessage()));
         }
 
-        /**
-         * Maneja errores durante el almacenamiento o persistencia.
-         *
-         * Retorna HTTP 500 Internal Server Error.
-         */
         @ExceptionHandler(IllegalStateException.class)
         public ResponseEntity<Map<String, String>> manejarErrorProceso(
                         IllegalStateException ex) {
@@ -276,12 +228,6 @@ public class DocumentoController {
                                 .body(Map.of("error", ex.getMessage()));
         }
 
-        /**
-         * Maneja el caso en que MS-Legajos confirma
-         * que el legajo solicitado no existe.
-         *
-         * Retorna HTTP 404 Not Found.
-         */
         @ExceptionHandler(LegajoNoEncontradoException.class)
         public ResponseEntity<Map<String, String>> manejarLegajoNoEncontrado(
                         LegajoNoEncontradoException ex) {
@@ -290,12 +236,6 @@ public class DocumentoController {
                                 .body(Map.of("error", ex.getMessage()));
         }
 
-        /**
-         * Maneja errores de comunicación o respuestas inesperadas
-         * de MS-Legajos.
-         *
-         * Retorna HTTP 503 Service Unavailable.
-         */
         @ExceptionHandler(LegajoServiceException.class)
         public ResponseEntity<Map<String, String>> manejarErrorMSLegajos(
                         LegajoServiceException ex) {
@@ -304,12 +244,6 @@ public class DocumentoController {
                                 .body(Map.of("error", ex.getMessage()));
         }
 
-        /**
-         * Maneja el caso en que el legajo existe,
-         * pero no se encuentra en estado ACTIVO.
-         *
-         * Retorna HTTP 400 Bad Request.
-         */
         @ExceptionHandler(LegajoEstadoInvalidoException.class)
         public ResponseEntity<Map<String, String>> manejarEstadoLegajoInvalido(
                         LegajoEstadoInvalidoException ex) {

@@ -1,3 +1,4 @@
+
 package cl.legga.documentos.documento.entity;
 
 import jakarta.persistence.*;
@@ -14,6 +15,9 @@ public class Documento {
 
     @Column(name = "legajo_id", nullable = false)
     private UUID legajoId;
+
+    @Column(name = "institucion_id", nullable = false)
+    private UUID institucionId;
 
     @Column(name = "nombre_original", nullable = false, length = 255)
     private String nombreOriginal;
@@ -42,38 +46,102 @@ public class Documento {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    public Documento() {}
+    public Documento() {
+    }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public UUID getId() {
+        return id;
+    }
 
-    public UUID getLegajoId() { return legajoId; }
-    public void setLegajoId(UUID legajoId) { this.legajoId = legajoId; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 
-    public String getNombreOriginal() { return nombreOriginal; }
-    public void setNombreOriginal(String nombreOriginal) { this.nombreOriginal = nombreOriginal; }
+    public UUID getLegajoId() {
+        return legajoId;
+    }
 
-    public String getNombreVisible() { return nombreVisible; }
-    public void setNombreVisible(String nombreVisible) { this.nombreVisible = nombreVisible; }
+    public void setLegajoId(UUID legajoId) {
+        this.legajoId = legajoId;
+    }
 
-    public String getTipoMime() { return tipoMime; }
-    public void setTipoMime(String tipoMime) { this.tipoMime = tipoMime; }
+    public UUID getInstitucionId() {
+        return institucionId;
+    }
 
-    public Long getTamanoBytes() { return tamanoBytes; }
-    public void setTamanoBytes(Long tamanoBytes) { this.tamanoBytes = tamanoBytes; }
+    public void setInstitucionId(UUID institucionId) {
+        this.institucionId = institucionId;
+    }
 
-    public String getStorageKey() { return storageKey; }
-    public void setStorageKey(String storageKey) { this.storageKey = storageKey; }
+    public String getNombreOriginal() {
+        return nombreOriginal;
+    }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public void setNombreOriginal(String nombreOriginal) {
+        this.nombreOriginal = nombreOriginal;
+    }
 
-    public String getUploadedBy() { return uploadedBy; }
-    public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
+    public String getNombreVisible() {
+        return nombreVisible;
+    }
 
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+    public void setNombreVisible(String nombreVisible) {
+        this.nombreVisible = nombreVisible;
+    }
 
-    public OffsetDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getTipoMime() {
+        return tipoMime;
+    }
+
+    public void setTipoMime(String tipoMime) {
+        this.tipoMime = tipoMime;
+    }
+
+    public Long getTamanoBytes() {
+        return tamanoBytes;
+    }
+
+    public void setTamanoBytes(Long tamanoBytes) {
+        this.tamanoBytes = tamanoBytes;
+    }
+
+    public String getStorageKey() {
+        return storageKey;
+    }
+
+    public void setStorageKey(String storageKey) {
+        this.storageKey = storageKey;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public String getUploadedBy() {
+        return uploadedBy;
+    }
+
+    public void setUploadedBy(String uploadedBy) {
+        this.uploadedBy = uploadedBy;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
